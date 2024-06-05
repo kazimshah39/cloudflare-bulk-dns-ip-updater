@@ -14,15 +14,34 @@ const apiClient = axios.create({
 });
 
 async function getZones() {
+  let zones = [];
+  let page = 1;
+  const perPage = 50; // Increase per page limit for fewer requests
+
   try {
-    const response = await apiClient.get("/zones");
-    if (!response.data.success) {
-      throw new Error(
-        "Failed to fetch zones: " +
-          response.data.errors.map((e) => e.message).join(", ")
-      );
+    while (true) {
+      const response = await apiClient.get("/zones", {
+        params: { page, per_page: perPage },
+      });
+      if (!response.data.success) {
+        throw new Error(
+          "Failed to fetch zones: " +
+            response.data.errors.map((e) => e.message).join(", ")
+        );
+      }
+
+      zones = zones.concat(response.data.result);
+
+      // Check if we need to fetch more pages
+      if (
+        response.data.result_info.page < response.data.result_info.total_pages
+      ) {
+        page++;
+      } else {
+        break;
+      }
     }
-    return response.data.result;
+    return zones;
   } catch (error) {
     console.error("Error fetching zones:", error.message);
     throw error;
